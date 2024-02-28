@@ -1,26 +1,26 @@
 package scanner
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
-	"bufio"
-	"strings"
+	. "lakies/moonshine/logging"
+	"lakies/moonshine/strace_types"
 	"strconv"
-	"github.com/shankarapailoor/moonshine/strace_types"
-	. "github.com/shankarapailoor/moonshine/logging"
+	"strings"
 )
 
-const(
-	maxBufferSize = 64*1024*1024
-	CoverDelim = ","
-	CoverID = "Cover:"
-	SYSRESTART = "ERESTART"
-	SignalPlus = "+++"
-	SignalMinus = "---"
+const (
+	maxBufferSize = 64 * 1024 * 1024
+	CoverDelim    = ","
+	CoverID       = "Cover:"
+	SYSRESTART    = "ERESTART"
+	SignalPlus    = "+++"
+	SignalMinus   = "---"
 )
 
 func parseIps(line string) []uint64 {
-	line = line[1: len(line)-1] //Remove quotes
+	line = line[1 : len(line)-1] //Remove quotes
 	ips := strings.Split(strings.Split(line, CoverID)[1], CoverDelim)
 	cover_set := make(map[uint64]bool, 0)
 	cover := make([]uint64, 0)

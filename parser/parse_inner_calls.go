@@ -1,9 +1,9 @@
 package parser
 
 import (
-	"github.com/shankarapailoor/moonshine/strace_types"
 	"github.com/google/syzkaller/prog"
-	. "github.com/shankarapailoor/moonshine/logging"
+	. "lakies/moonshine/logging"
+	"lakies/moonshine/strace_types"
 )
 
 func ParseInnerCall(syzType prog.Type, straceType *strace_types.Call, ctx *Context) prog.Arg {
@@ -32,7 +32,7 @@ func parse_Makedev(syzType prog.Type, straceType *strace_types.Call, ctx *Contex
 	major = int64(arg1.Eval(ctx.Target))
 	minor = int64(arg2.Eval(ctx.Target))
 
-	id = ((minor & 0xff) | ((major & 0xfff) << 8) |  ((minor & ^0xff) << 12) | ((major & ^0xfff) << 32))
+	id = ((minor & 0xff) | ((major & 0xfff) << 8) | ((minor & ^0xff) << 12) | ((major & ^0xfff) << 32))
 
 	return strace_types.ConstArg(syzType, uint64(id))
 
@@ -69,7 +69,6 @@ func parse_HtonsHtonl(syzType prog.Type, straceType *strace_types.Call, ctx *Con
 	}
 	return nil
 }
-
 
 func parse_InetAddr(syzType prog.Type, straceType *strace_types.Call, ctx *Context) prog.Arg {
 	unionType := syzType.(*prog.UnionType)

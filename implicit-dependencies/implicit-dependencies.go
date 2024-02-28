@@ -1,9 +1,9 @@
 package implicit_dependencies
 
 import (
-	"io/ioutil"
-	. "github.com/shankarapailoor/moonshine/logging"
 	"encoding/json"
+	"io/ioutil"
+	. "lakies/moonshine/logging"
 )
 
 type ImplicitDependencies map[string][]string

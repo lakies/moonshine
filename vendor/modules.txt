@@ -1,0 +1,28 @@
+# github.com/google/syzkaller v0.0.0-20240227151032-d367cbe5791e
+## explicit; go 1.19
+github.com/google/syzkaller/pkg/db
+github.com/google/syzkaller/pkg/hash
+github.com/google/syzkaller/pkg/ifuzz
+github.com/google/syzkaller/pkg/ifuzz/iset
+github.com/google/syzkaller/pkg/ifuzz/powerpc
+github.com/google/syzkaller/pkg/ifuzz/powerpc/generated
+github.com/google/syzkaller/pkg/ifuzz/x86
+github.com/google/syzkaller/pkg/ifuzz/x86/generated
+github.com/google/syzkaller/pkg/image
+github.com/google/syzkaller/pkg/log
+github.com/google/syzkaller/pkg/osutil
+github.com/google/syzkaller/prog
+github.com/google/syzkaller/sys
+github.com/google/syzkaller/sys/akaros/gen
+github.com/google/syzkaller/sys/darwin/gen
+github.com/google/syzkaller/sys/freebsd/gen
+github.com/google/syzkaller/sys/fuchsia/gen
+github.com/google/syzkaller/sys/linux/gen
+github.com/google/syzkaller/sys/netbsd/gen
+github.com/google/syzkaller/sys/openbsd/gen
+github.com/google/syzkaller/sys/test/gen
+github.com/google/syzkaller/sys/trusty/gen
+github.com/google/syzkaller/sys/windows/gen
+# golang.org/x/sys v0.16.0
+## explicit; go 1.18
+golang.org/x/sys/unix

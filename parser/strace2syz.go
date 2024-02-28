@@ -1,14 +1,14 @@
 package parser
 
 import (
+	"encoding/binary"
+	"fmt"
 	"github.com/google/syzkaller/pkg/log"
 	"github.com/google/syzkaller/prog"
-	"github.com/shankarapailoor/moonshine/strace_types"
-	"github.com/shankarapailoor/moonshine/tracker"
-	. "github.com/shankarapailoor/moonshine/logging"
-	"github.com/shankarapailoor/moonshine/distiller"
-	"fmt"
-	"encoding/binary"
+	"lakies/moonshine/distiller"
+	. "lakies/moonshine/logging"
+	"lakies/moonshine/strace_types"
+	"lakies/moonshine/tracker"
 	"math/rand"
 	"strings"
 	//"bytes"
@@ -18,23 +18,22 @@ import (
 
 type returnCache map[ResourceDescription]prog.Arg
 
-
-func NewRCache() returnCache{
+func NewRCache() returnCache {
 	return make(map[ResourceDescription]prog.Arg, 0)
 }
 
 func (r *returnCache) Cache(SyzType prog.Type, StraceType strace_types.Type, arg prog.Arg) {
 	resDesc := ResourceDescription{
 		Type: strace_types.GetSyzType(SyzType),
-		Val: StraceType.String(),
+		Val:  StraceType.String(),
 	}
 	(*r)[resDesc] = arg
 }
 
-func (r *returnCache) Get(SyzType prog.Type, StraceType strace_types.Type) prog.Arg{
+func (r *returnCache) Get(SyzType prog.Type, StraceType strace_types.Type) prog.Arg {
 	resDesc := ResourceDescription{
 		Type: strace_types.GetSyzType(SyzType),
-		Val: StraceType.String(),
+		Val:  StraceType.String(),
 	}
 	if arg, ok := (*r)[resDesc]; ok {
 		if arg != nil {
@@ -47,19 +46,19 @@ func (r *returnCache) Get(SyzType prog.Type, StraceType strace_types.Type) prog.
 
 type ResourceDescription struct {
 	Type string
-	Val string
+	Val  string
 }
 
 type Context struct {
-	Cache returnCache
-	Prog *prog.Prog
+	Cache             returnCache
+	Prog              *prog.Prog
 	CurrentStraceCall *strace_types.Syscall
-	CurrentSyzCall *prog.Call
-	CurrentStraceArg strace_types.Type
-	State *tracker.State
-	Target *prog.Target
-	CallToCover map[*prog.Call][]uint64
-	DependsOn map[*prog.Call]map[*prog.Call]int
+	CurrentSyzCall    *prog.Call
+	CurrentStraceArg  strace_types.Type
+	State             *tracker.State
+	Target            *prog.Target
+	CallToCover       map[*prog.Call][]uint64
+	DependsOn         map[*prog.Call]map[*prog.Call]int
 }
 
 func NewContext(target *prog.Target) (ctx *Context) {
@@ -76,7 +75,7 @@ func NewContext(target *prog.Target) (ctx *Context) {
 
 func (ctx *Context) GenerateSeeds() distiller.Seeds {
 	var seeds distiller.Seeds = make([]*distiller.Seed, 0)
-	for i, call := range(ctx.Prog.Calls) {
+	for i, call := range ctx.Prog.Calls {
 		var dependsOn map[*prog.Call]int = nil
 		if _, ok := ctx.DependsOn[call]; ok {
 			dependsOn = ctx.DependsOn[call]
@@ -93,7 +92,7 @@ func (ctx *Context) GenerateSeeds() distiller.Seeds {
 
 func GetProgs(ctxs []*Context) []*prog.Prog {
 	progs := make([]*prog.Prog, 0)
-	for _, ctx := range(ctxs) {
+	for _, ctx := range ctxs {
 		progs = append(progs, ctx.Prog)
 	}
 	return progs
@@ -118,7 +117,6 @@ func (ctx *Context) FillOutMemory() bool {
 	}
 	return true
 }
-
 
 func ParseProg(trace *strace_types.Trace, target *prog.Target) (*Context, error) {
 	syzProg := new(prog.Prog)
@@ -178,7 +176,7 @@ func parseCall(ctx *Context) (*prog.Call, error) {
 	if call := ParseMemoryCall(ctx); call != nil {
 		return call, nil
 	}
-	for i := range(retCall.Meta.Args) {
+	for i := range retCall.Meta.Args {
 		var strArg strace_types.Type = nil
 		if i < len(straceCall.Args) {
 			strArg = straceCall.Args[i]
@@ -213,7 +211,7 @@ func parseArgs(syzType prog.Type, straceArg strace_types.Type, ctx *Context) (pr
 		ctx.CurrentStraceArg = straceArg
 	}
 	switch a := syzType.(type) {
-	case *prog.IntType, *prog.ConstType, *prog.FlagsType,  *prog.CsumType:
+	case *prog.IntType, *prog.ConstType, *prog.FlagsType, *prog.CsumType:
 		return Parse_ConstType(a, straceArg, ctx)
 	case *prog.LenType:
 		return GenDefaultArg(syzType, ctx), nil
@@ -248,7 +246,6 @@ func Parse_VmaType(syzType *prog.VmaType, straceType strace_types.Type, ctx *Con
 	ctx.State.Tracker.AddAllocation(ctx.CurrentSyzCall, pageSize, arg)
 	return arg, nil
 }
-
 
 func Parse_ArrayType(syzType *prog.ArrayType, straceType strace_types.Type, ctx *Context) (prog.Arg, error) {
 	args := make([]prog.Arg, 0)
@@ -297,7 +294,7 @@ func Parse_StructType(syzType *prog.StructType, straceType strace_types.Type, ct
 		/*
 		 May get here through select. E.g. select(2, [6, 7], ..) since Expression can
 		 be Ints. However, creating fd set is hard and we let default arg through
-		 */
+		*/
 		return GenDefaultArg(syzType, ctx), nil
 	case *strace_types.BufferType:
 		return serialize(syzType, []byte(a.Val), ctx)
@@ -310,7 +307,7 @@ func Parse_StructType(syzType *prog.StructType, straceType strace_types.Type, ct
 func evalFields(syzFields []prog.Type, straceFields []strace_types.Type, ctx *Context) []prog.Arg {
 	args := make([]prog.Arg, 0)
 	j := 0
-	for i, _ := range(syzFields) {
+	for i, _ := range syzFields {
 		if prog.IsPad(syzFields[i]) {
 			args = append(args, ctx.Target.DefaultArg(syzFields[i]))
 		} else {
@@ -443,9 +440,9 @@ func IdentifyIfrIfruUnion(ctx *Context) int {
 func IdentifyIfconfUnion(ctx *Context) int {
 	switch ctx.CurrentStraceArg.(type) {
 	case *strace_types.StructType:
-		return 1;
+		return 1
 	default:
-		return 0;
+		return 0
 	}
 }
 
@@ -503,7 +500,7 @@ func Parse_BufferType(syzType *prog.BufferType, straceType strace_types.Type, ct
 		bufVal = strace_types.GenBuff(bufVal, syzType.Size())
 		buf := make([]byte, syzType.Size())
 		valLen := len(bufVal)
-		for i := range(buf) {
+		for i := range buf {
 			if i < valLen {
 				buf[i] = bufVal[i]
 			} else {
@@ -552,9 +549,9 @@ func Parse_ConstType(syzType prog.Type, straceType strace_types.Type, ctx *Conte
 	case *strace_types.Expression:
 		if a.IntsType != nil && len(a.IntsType) >= 2 {
 			/*
-		 	May get here through select. E.g. select(2, [6, 7], ..) since Expression can
-			 be Ints. However, creating fd set is hard and we let default arg through
-		 	*/
+				 	May get here through select. E.g. select(2, [6, 7], ..) since Expression can
+					 be Ints. However, creating fd set is hard and we let default arg through
+			*/
 			return GenDefaultArg(syzType, ctx), nil
 		}
 		return strace_types.ConstArg(syzType, a.Eval(ctx.Target)), nil
@@ -562,20 +559,20 @@ func Parse_ConstType(syzType prog.Type, straceType strace_types.Type, ctx *Conte
 		return strace_types.ConstArg(syzType, a.BeforeCall.Eval(ctx.Target)), nil
 	case *strace_types.ArrayType:
 		/*
-		Sometimes strace represents a pointer to int as [0] which gets parsed
-		as Array([0], len=1). A good example is ioctl(3, FIONBIO, [1]).
-		 */
+			Sometimes strace represents a pointer to int as [0] which gets parsed
+			as Array([0], len=1). A good example is ioctl(3, FIONBIO, [1]).
+		*/
 		if a.Len == 0 {
 			panic(fmt.Sprintf("Parsing const type. Got array type with len 0: %#v", ctx))
 		}
 		return Parse_ConstType(syzType, a.Elems[0], ctx)
 	case *strace_types.StructType:
 		/*
-		Sometimes system calls have an int type that is actually a union. Strace will represent the union
-		like a struct e.g.
-		sigev_value={sival_int=-2123636944, sival_ptr=0x7ffd816bdf30}
-		For now we choose the first option
-		 */
+			Sometimes system calls have an int type that is actually a union. Strace will represent the union
+			like a struct e.g.
+			sigev_value={sival_int=-2123636944, sival_ptr=0x7ffd816bdf30}
+			For now we choose the first option
+		*/
 		return Parse_ConstType(syzType, a.Fields[0], ctx)
 	case *strace_types.Field:
 		//We have an argument of the form sin_port=IntType(0)
@@ -586,11 +583,11 @@ func Parse_ConstType(syzType prog.Type, straceType strace_types.Type, ctx *Conte
 	case *strace_types.BufferType:
 		//The call almost certainly an error or missing fields
 		return GenDefaultArg(syzType, ctx), nil
-	        //E.g. ltp_bind01 two arguments are empty and
+		//E.g. ltp_bind01 two arguments are empty and
 	case *strace_types.PointerType:
 		/*
-		This can be triggered by the following:
-		2435  connect(3, {sa_family=0x2f ,..., 16)*/
+			This can be triggered by the following:
+			2435  connect(3, {sa_family=0x2f ,..., 16)*/
 		return strace_types.ConstArg(syzType, a.Address), nil
 	default:
 		Failf("Cannot convert Strace Type: %s to Const Type", straceType.Name())
@@ -637,17 +634,16 @@ func Parse_ProcType(syzType *prog.ProcType, straceType strace_types.Type, ctx *C
 	case *strace_types.Call:
 		return ParseInnerCall(syzType, a, ctx), nil
 	case *strace_types.BufferType:
-	/* Again probably an error case
-	   Something like the following will trigger this
-	    bind(3, {sa_family=AF_INET, sa_data="\xac"}, 3) = -1 EINVAL(Invalid argument)
-	*/
+		/* Again probably an error case
+		   Something like the following will trigger this
+		    bind(3, {sa_family=AF_INET, sa_data="\xac"}, 3) = -1 EINVAL(Invalid argument)
+		*/
 		return GenDefaultArg(syzType, ctx), nil
 	default:
 		Failf("Unsupported Type for Proc: %#v\n", straceType)
 	}
 	return nil, nil
 }
-
 
 func GenDefaultArg(syzType prog.Type, ctx *Context) prog.Arg {
 	switch a := syzType.(type) {
@@ -696,7 +692,7 @@ func serialize(syzType prog.Type, buf []byte, ctx *Context) (prog.Arg, error) {
 		bufLen := uint64(len(buf))
 		args := make([]prog.Arg, 0)
 		for _, field := range a.Fields {
-			if pos + field.Size() >= bufLen {
+			if pos+field.Size() >= bufLen {
 				args = append(args, GenDefaultArg(field, ctx))
 				continue
 			} else {
@@ -737,14 +733,14 @@ func addr(ctx *Context, syzType prog.Type, size uint64, data prog.Arg) (prog.Arg
 
 func reorderStructFields(syzType *prog.StructType, straceType *strace_types.StructType, ctx *Context) {
 	/*
-	Sometimes strace reports struct fields out of order compared to Syzkaller.
-	Example: 5704  bind(3, {sa_family=AF_INET6,
-				sin6_port=htons(8888),
-				inet_pton(AF_INET6, "::", &sin6_addr),
-				sin6_flowinfo=htonl(2206138368),
-				sin6_scope_id=2049825634}, 128) = 0
-	The flow_info and pton fields are switched in Syzkaller
-	 */
+		Sometimes strace reports struct fields out of order compared to Syzkaller.
+		Example: 5704  bind(3, {sa_family=AF_INET6,
+					sin6_port=htons(8888),
+					inet_pton(AF_INET6, "::", &sin6_addr),
+					sin6_flowinfo=htonl(2206138368),
+					sin6_scope_id=2049825634}, 128) = 0
+		The flow_info and pton fields are switched in Syzkaller
+	*/
 	switch syzType.TypeName {
 	case "sockaddr_in6":
 		field2 := straceType.Fields[2]
@@ -786,7 +782,6 @@ func GenDefaultStraceType(syzType prog.Type) strace_types.Type {
 	}
 	return nil
 }
-
 
 func SanitizeFilename(filename string) string {
 	var buf bytes.Buffer
