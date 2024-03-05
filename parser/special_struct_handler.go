@@ -1,13 +1,13 @@
 package parser
 
 import (
-	"github.com/shankarapailoor/moonshine/strace_types"
 	"github.com/google/syzkaller/prog"
+	"lakies/moonshine/strace_types"
 )
 
 type structHandler func(syzType *prog.StructType, straceType strace_types.Type, ctx *Context) strace_types.Type
 
-var SpecialStruct_Map = map[string]structHandler {
+var SpecialStruct_Map = map[string]structHandler{
 	"bpf_framed_program": bpfFramedProgramHandler,
 }
 

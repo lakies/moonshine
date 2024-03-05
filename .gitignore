@@ -3,3 +3,8 @@ scanner/strace.go
 *.output
 .*
 !/.gitignore
+traces
+deserialized
+bin
+corpus.db
+

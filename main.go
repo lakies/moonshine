@@ -1,39 +1,39 @@
 package main
 
 import (
-	"github.com/google/syzkaller/pkg/log"
-	. "github.com/shankarapailoor/moonshine/scanner"
-	. "github.com/shankarapailoor/moonshine/parser"
-	"github.com/google/syzkaller/prog"
-	"github.com/google/syzkaller/pkg/hash"
-	"fmt"
-	"os"
-	"github.com/google/syzkaller/pkg/db"
-	"io/ioutil"
-	"path/filepath"
-	"strings"
-	"strconv"
 	"flag"
-	"github.com/shankarapailoor/moonshine/strace_types"
-	. "github.com/shankarapailoor/moonshine/logging"
-	"github.com/google/syzkaller/sys"
+	"fmt"
+	"io/ioutil"
+	config "lakies/moonshine/configs"
+	"lakies/moonshine/distiller"
+	. "lakies/moonshine/logging"
+	. "lakies/moonshine/parser"
+	. "lakies/moonshine/scanner"
+	"lakies/moonshine/strace_types"
+	"lakies/moonshine/tracker"
+	"os"
 	"path"
-	"github.com/shankarapailoor/moonshine/tracker"
-	"github.com/shankarapailoor/moonshine/distiller"
-	"github.com/shankarapailoor/moonshine/configs"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	"github.com/google/syzkaller/pkg/db"
+	"github.com/google/syzkaller/pkg/hash"
+	"github.com/google/syzkaller/pkg/log"
+	"github.com/google/syzkaller/prog"
+	"github.com/google/syzkaller/sys"
 )
 
 var (
-	flagFile = flag.String("file", "", "file to parse")
-	flagDir = flag.String("dir", "", "director to parse")
+	flagFile    = flag.String("file", "", "file to parse")
+	flagDir     = flag.String("dir", "", "director to parse")
 	flagDistill = flag.String("distill", "", "Path to distillation config")
 )
 
 const (
-	OS = "linux"
-	Arch = "amd64"
+	OS               = "linux"
+	Arch             = "amd64"
 	currentDBVersion = 3
-
 )
 
 func main() {
@@ -74,7 +74,7 @@ func ParseTraces(target *prog.Target) []*Context {
 	seeds := make(distiller.Seeds, 0)
 	totalFiles := len(names)
 	fmt.Printf("Total Number of Files: %d\n", totalFiles)
-	for i, file := range(names) {
+	for i, file := range names {
 		fmt.Printf("Parsing File %d/%d: %s\n", i+1, totalFiles, path.Base(names[i]))
 		tree := Parse(file)
 		if tree == nil {
@@ -133,12 +133,10 @@ func ParseTraces(target *prog.Target) []*Context {
 	return ret
 }
 
-
-
 func getFileNames(dir string) []string {
 	names := make([]string, 0)
 	if infos, err := ioutil.ReadDir(dir); err == nil {
-		for _, info := range (infos) {
+		for _, info := range infos {
 			name := path.Join(dir, info.Name())
 			names = append(names, name)
 		}
@@ -164,8 +162,8 @@ func ParseTree(tree *strace_types.TraceTree, pid int64, target *prog.Target) []*
 		ctx.Prog = parsedProg
 		ctxs = append(ctxs, ctx)
 	}
-	for _, pid_ := range(tree.Ptree[pid]) {
-		if tree.TraceMap[pid_] != nil{
+	for _, pid_ := range tree.Ptree[pid] {
+		if tree.TraceMap[pid_] != nil {
 			ctxs = append(ctxs, ParseTree(tree, pid_, target)...)
 		}
 	}
@@ -191,7 +189,6 @@ func FillOutMemory(prog_ *prog.Prog, tracker *tracker.MemoryTracker) error {
 	}
 	return nil
 }
-
 
 func pack(dir, file string) {
 	files, err := ioutil.ReadDir(dir)
